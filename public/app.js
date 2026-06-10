@@ -1,5 +1,6 @@
-import { beautify, minify, parseJson, indentToken } from "./json.js";
+import { parseJson, indentToken, sortKeysDeep } from "./json.js";
 import { renderTree, setAllCollapsed } from "./tree.js";
+import { toYaml, toCsv } from "./convert.js";
 
 // --- Network watchdog -------------------------------------------------------
 // form8r makes zero network calls. We prove it by wrapping every browser API
@@ -46,8 +47,10 @@ const gutter = $("gutter");
 const sortKeys = $("sortKeys");
 const searchInput = $("searchInput");
 const searchCount = $("searchCount");
+const formatSelect = $("formatSelect");
 
 let lastOutput = ""; // current formatted output text, without any search markup
+let lastValue; // last successfully parsed JSON value (for the tree view)
 
 const BIG = 500_000; // chars; above this we offload to a worker
 let worker = null;
@@ -91,8 +94,13 @@ function showOutput(text) {
     output.textContent = text;
   }
   if (!treeEl.classList.contains("hidden")) {
-    const res = parseJson(text);
-    if (res.ok) renderTree(treeEl, res.value);
+    // The tree always shows JSON structure, even when the text is YAML/CSV.
+    if (lastValue !== undefined) {
+      renderTree(treeEl, lastValue);
+    } else {
+      const res = parseJson(text);
+      if (res.ok) renderTree(treeEl, res.value);
+    }
   }
 }
 
@@ -121,13 +129,18 @@ function run(mode) {
     setStatus("Nothing to format.", "");
     output.textContent = "";
     lastOutput = "";
+    lastValue = undefined;
     searchCount.textContent = "";
     treeEl.replaceChildren();
     updateGutter();
     return;
   }
 
-  if (text.length > BIG) {
+  const fmt = formatSelect.value; // json | yaml | csv
+  const sort = sortKeys.checked;
+
+  // Large JSON beautify/minify is offloaded to the worker (plain JSON only).
+  if (text.length > BIG && (mode === "minify" || fmt === "json")) {
     setStatus("Formatting large input…");
     const id = ++reqId;
     const w = getWorker();
@@ -135,6 +148,7 @@ function run(mode) {
       if (e.data.id !== id) return;
       w.removeEventListener("message", onMsg);
       if (e.data.ok) {
+        lastValue = undefined; // not parsed on this thread; tree re-parses if needed
         showOutput(e.data.output);
         setStatus(`✓ Valid JSON · ${e.data.output.length.toLocaleString()} chars`, "ok");
         updateGutter();
@@ -143,20 +157,43 @@ function run(mode) {
       }
     };
     w.addEventListener("message", onMsg);
-    w.postMessage({ id, mode, text, indent: indentToken(indentSelect.value), sort: sortKeys.checked });
+    w.postMessage({ id, mode, text, indent: indentToken(indentSelect.value), sort });
     return;
   }
 
-  const sort = sortKeys.checked;
-  const res =
-    mode === "beautify" ? beautify(text, indentToken(indentSelect.value), sort) : minify(text, sort);
-  if (res.ok && res.output !== undefined) {
-    showOutput(res.output);
-    setStatus(`✓ Valid JSON · ${res.output.length.toLocaleString()} chars`, "ok");
-    updateGutter();
-  } else if (!res.ok) {
+  // Parse once, then render in the requested shape.
+  const res = parseJson(text);
+  if (!res.ok) {
     reportError(res.error);
+    return;
   }
+  const value = sort ? sortKeysDeep(res.value) : res.value;
+  lastValue = value;
+
+  let out;
+  let label;
+  try {
+    if (mode === "minify") {
+      out = JSON.stringify(value);
+      label = "JSON minified";
+    } else if (fmt === "yaml") {
+      out = toYaml(value);
+      label = "YAML";
+    } else if (fmt === "csv") {
+      out = toCsv(value);
+      label = "CSV";
+    } else {
+      out = JSON.stringify(value, null, indentToken(indentSelect.value));
+      label = "JSON";
+    }
+  } catch (err) {
+    setStatus(`✗ ${err.message}`, "err");
+    return;
+  }
+
+  showOutput(out);
+  setStatus(`✓ Valid JSON · ${label} · ${out.length.toLocaleString()} chars`, "ok");
+  updateGutter();
 }
 
 // --- Wire up ----------------------------------------------------------------
@@ -166,6 +203,7 @@ $("clearBtn").addEventListener("click", () => {
   input.value = "";
   output.textContent = "";
   lastOutput = "";
+  lastValue = undefined;
   searchCount.textContent = "";
   treeEl.replaceChildren();
   setStatus("");
@@ -227,12 +265,17 @@ viewTree.addEventListener("click", () => {
   viewText.classList.remove("active");
   output.classList.add("hidden");
   treeEl.classList.remove("hidden");
-  const res = parseJson(output.textContent || input.value);
-  if (res.ok) {
-    renderTree(treeEl, res.value);
+  if (lastValue !== undefined) {
+    renderTree(treeEl, lastValue);
   } else {
-    treeEl.replaceChildren();
-    setStatus("Format valid JSON first to see the tree.", "err");
+    const res = parseJson(input.value);
+    if (res.ok) {
+      lastValue = res.value;
+      renderTree(treeEl, res.value);
+    } else {
+      treeEl.replaceChildren();
+      setStatus("Format valid JSON first to see the tree.", "err");
+    }
   }
 });
 
@@ -306,15 +349,14 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") toggleNetInfo(false);
 });
 
-// --- Sort keys --------------------------------------------------------------
-sortKeys.addEventListener("change", () => {
+// --- Sort keys / indent / output format -------------------------------------
+function reformatOnSettingChange() {
   savePrefs();
   if (input.value.trim()) run("beautify");
-});
-indentSelect.addEventListener("change", () => {
-  savePrefs();
-  if (input.value.trim()) run("beautify");
-});
+}
+sortKeys.addEventListener("change", reformatOnSettingChange);
+indentSelect.addEventListener("change", reformatOnSettingChange);
+formatSelect.addEventListener("change", reformatOnSettingChange);
 
 // --- Search in the formatted output -----------------------------------------
 let hits = [];
@@ -379,7 +421,11 @@ function savePrefs() {
   try {
     localStorage.setItem(
       PREFS_KEY,
-      JSON.stringify({ indent: indentSelect.value, sort: sortKeys.checked })
+      JSON.stringify({
+        indent: indentSelect.value,
+        sort: sortKeys.checked,
+        format: formatSelect.value,
+      })
     );
   } catch {
     /* storage may be unavailable (e.g. private mode) — ignore */
@@ -390,6 +436,7 @@ function loadPrefs() {
     const p = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
     if (p.indent) indentSelect.value = p.indent;
     if (typeof p.sort === "boolean") sortKeys.checked = p.sort;
+    if (p.format) formatSelect.value = p.format;
   } catch {
     /* ignore */
   }

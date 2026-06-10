@@ -2,7 +2,7 @@
 // Caches the app shell so form8r works completely offline after first load.
 // It only ever touches same-origin app files — it never sends your JSON anywhere.
 
-const CACHE = "form8r-v1";
+const CACHE = "form8r-v2";
 const ASSETS = [
   "/",
   "/index.html",
@@ -10,6 +10,7 @@ const ASSETS = [
   "/app.js",
   "/json.js",
   "/tree.js",
+  "/convert.js",
   "/worker.js",
   "/favicon.svg",
   "/manifest.webmanifest",
