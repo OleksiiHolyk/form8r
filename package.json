@@ -1,0 +1,11 @@
+{
+  "name": "form8r",
+  "version": "0.1.0",
+  "description": "Fast, genuinely private JSON formatter. Runs entirely in your browser. Zero network. Zero dependencies.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test"
+  }
+}
