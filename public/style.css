@@ -125,7 +125,33 @@ html, body {
   background: var(--panel);
 }
 .pane-title { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-.actions { display: flex; align-items: center; gap: 8px; }
+.actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Search box in the output pane head */
+.search-box { display: flex; align-items: center; gap: 6px; }
+.search {
+  font-family: var(--sans), sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 9px;
+  width: 140px;
+}
+.search:focus { outline: none; border-color: var(--accent); }
+.search-count { font-family: var(--mono), monospace; font-size: 12px; color: var(--muted); min-width: 1ch; }
+
+/* Search hit highlighting in the text output */
+mark.hit {
+  background: rgba(255, 180, 84, 0.25);
+  color: var(--text);
+  border-radius: 2px;
+}
+mark.hit.active {
+  background: var(--accent);
+  color: #06101f;
+}
 
 button, select {
   font-family: var(--sans), sans-serif;

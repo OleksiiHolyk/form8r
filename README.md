@@ -73,8 +73,6 @@ test/                   unit tests (node:test, no dependencies)
 .github/                CI workflows + CODEOWNERS
 ```
 
-> Deploying on Cloudflare Pages: set **Build output directory** to `public`.
-
 ## Why no build step
 
 The product's whole promise is trust. A build step (bundler + transpiler + their dependencies) is exactly the place a supply-chain attack injects code into what users receive. By shipping plain ES modules with no dependencies, that entire risk class disappears, and the deployed site is byte-for-byte auditable against this repo.

@@ -104,6 +104,10 @@
                 <option value="tab">Tab</option>
               </select>
             </label>
+            <label class="indent" title="Sort object keys alphabetically">
+              <input type="checkbox" id="sortKeys" />
+              Sort keys
+            </label>
             <button id="beautifyBtn" class="primary">Beautify</button>
             <button id="minifyBtn">Minify</button>
             <button id="clearBtn">Clear</button>
@@ -126,6 +130,16 @@
         <div class="pane-head">
           <span class="pane-title">Output</span>
           <div class="actions">
+            <div class="search-box">
+              <input
+                type="search"
+                id="searchInput"
+                class="search"
+                placeholder="Search…"
+                aria-label="Search in output"
+              />
+              <span id="searchCount" class="search-count"></span>
+            </div>
             <div class="view-toggle">
               <button id="viewText" class="active">Text</button>
               <button id="viewTree">Tree</button>
