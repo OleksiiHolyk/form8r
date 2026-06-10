@@ -42,6 +42,7 @@ const treeEl = $("tree");
 const status = $("status");
 const indentSelect = $("indentSelect");
 const fileInput = $("fileInput");
+const gutter = $("gutter");
 
 const BIG = 500_000; // chars; above this we offload to a worker
 let worker = null;
@@ -59,6 +60,24 @@ function setStatus(msg, kind = "") {
   status.textContent = msg;
 }
 
+// Render line numbers for the input box, optionally highlighting the error line.
+function updateGutter(errorLine) {
+  const count = input.value.split("\n").length;
+  let html = "";
+  for (let i = 1; i <= count; i++) {
+    html += i === errorLine ? `<span class="err-line">${i}</span>\n` : i + "\n";
+  }
+  gutter.innerHTML = html;
+  gutter.scrollTop = input.scrollTop;
+}
+
+// Keep the gutter vertically aligned with the textarea as it scrolls.
+input.addEventListener("scroll", () => {
+  gutter.scrollTop = input.scrollTop;
+});
+// Re-number (and clear any error highlight) as the user edits.
+input.addEventListener("input", () => updateGutter());
+
 function showOutput(text) {
   output.textContent = text;
   if (!treeEl.classList.contains("hidden")) {
@@ -71,6 +90,7 @@ function reportError(error) {
   const { line, column, message, position } = error;
   const loc = line ? ` (line ${line}${column ? `, column ${column}` : ""})` : "";
   setStatus(`✗ ${message ?? "Invalid JSON"}${loc}`, "err");
+  updateGutter(line);
   highlightError(position, line);
 }
 
@@ -82,6 +102,7 @@ function highlightError(position, line) {
   input.setSelectionRange(pos, Math.min(pos + 1, input.value.length));
   const lh = parseFloat(getComputedStyle(input).lineHeight) || 18;
   input.scrollTop = Math.max(0, ((line || 1) - 3) * lh);
+  gutter.scrollTop = input.scrollTop;
 }
 
 function run(mode) {
@@ -90,6 +111,7 @@ function run(mode) {
     setStatus("Nothing to format.", "");
     output.textContent = "";
     treeEl.replaceChildren();
+    updateGutter();
     return;
   }
 
@@ -103,6 +125,7 @@ function run(mode) {
       if (e.data.ok) {
         showOutput(e.data.output);
         setStatus(`✓ Valid JSON · ${e.data.output.length.toLocaleString()} chars`, "ok");
+        updateGutter();
       } else {
         reportError(e.data.error);
       }
@@ -116,6 +139,7 @@ function run(mode) {
   if (res.ok && res.output !== undefined) {
     showOutput(res.output);
     setStatus(`✓ Valid JSON · ${res.output.length.toLocaleString()} chars`, "ok");
+    updateGutter();
   } else if (!res.ok) {
     reportError(res.error);
   }
@@ -129,6 +153,7 @@ $("clearBtn").addEventListener("click", () => {
   output.textContent = "";
   treeEl.replaceChildren();
   setStatus("");
+  updateGutter();
   input.focus();
 });
 
@@ -261,4 +286,5 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+updateGutter();
 setStatus("Ready. Paste JSON and hit Beautify (or Ctrl/Cmd+Enter).");

@@ -69,12 +69,16 @@
             <button id="clearBtn">Clear</button>
           </div>
         </div>
-        <textarea
-          id="input"
-          class="editor"
-          spellcheck="false"
-          placeholder="Paste your JSON here — or drop a .json file straight into this box…"
-        ></textarea>
+        <div class="editor-wrap">
+          <div class="gutter" id="gutter" aria-hidden="true"></div>
+          <textarea
+            id="input"
+            class="editor"
+            spellcheck="false"
+            aria-label="JSON input"
+            placeholder="Paste your JSON here — or drop a .json file straight into this box…"
+          ></textarea>
+        </div>
         <div class="status" id="status"></div>
       </section>
 
