@@ -200,11 +200,30 @@ button.primary { background: var(--accent); color: #06101f; border-color: var(--
 .hidden { display: none; }
 
 .tnode { padding-left: 14px; }
+.tchildren { padding-left: 0; }
 .tkey { color: var(--accent); }
 .tstr { color: var(--green); }
 .tnum { color: #d3a0ff; }
 .tbool { color: #ffb454; }
 .tnull { color: var(--muted); }
-.tcollapse { cursor: pointer; user-select: none; color: var(--muted); margin-right: 4px; }
-.tcollapse:hover { color: var(--text); }
+.tcollapse {
+  display: inline-block;
+  width: 1em;
+  margin-left: -14px;
+  margin-right: 2px;
+  text-align: center;
+  user-select: none;
+  color: var(--muted);
+}
 .tmeta { color: var(--muted); }
+
+/* Header line of a foldable node: hover-highlight and click anywhere to fold. */
+.tline { cursor: default; border-radius: 4px; }
+.tnode > .tline:has(.tcollapse) { cursor: pointer; }
+.tnode > .tline:has(.tcollapse):hover { background: var(--bg-2); }
+.tnode > .tline:has(.tcollapse):hover .tcollapse { color: var(--text); }
+
+/* Collapsed state: hide children, show the inline " … }" preview. */
+.tsummary { display: none; }
+.tnode.collapsed > .tchildren { display: none; }
+.tnode.collapsed > .tline > .tsummary { display: inline; }
