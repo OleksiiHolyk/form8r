@@ -1,0 +1,21 @@
+name: Branch policy
+
+# Enforce that pull requests into `main` can only come from `develop`.
+# GitHub has no native "allowed source branch" setting, so we gate it with a
+# required status check. Make the `only-from-develop` job a required check in
+# main's branch protection rule for this to actually block merges.
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  only-from-develop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure the PR source branch is develop
+        run: |
+          if [ "${{ github.head_ref }}" != "develop" ]; then
+            echo "::error::PRs into 'main' are only allowed from 'develop' (got '${{ github.head_ref }}')."
+            exit 1
+          fi
+          echo "Source branch is 'develop' — allowed."
