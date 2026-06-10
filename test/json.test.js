@@ -2,7 +2,7 @@
 // Run with:  node --test   (or: npm test)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { beautify, minify, parseJson, indentToken } from "../json.js";
+import { beautify, minify, parseJson, indentToken } from "../public/json.js";
 
 test("indentToken maps select values to JSON.stringify args", () => {
   assert.equal(indentToken("2"), 2);
