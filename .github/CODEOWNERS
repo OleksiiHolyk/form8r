@@ -1,0 +1,7 @@
+# Code owners for form8r.
+# When a pull request changes matching files, these owners are automatically
+# requested for review. Enforce it via branch protection only once there are
+# other contributors — a single owner cannot approve their own PR.
+
+# Default owner for everything in the repo
+* @OleksiiHolyk
