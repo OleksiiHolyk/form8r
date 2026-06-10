@@ -2,8 +2,8 @@
 import { beautify, minify } from "./json.js";
 
 self.onmessage = (e) => {
-  const { id, mode, text, indent } = e.data;
-  const res = mode === "beautify" ? beautify(text, indent) : minify(text);
+  const { id, mode, text, indent, sort } = e.data;
+  const res = mode === "beautify" ? beautify(text, indent, sort) : minify(text, sort);
   if (res.ok && res.output !== undefined) {
     self.postMessage({ id, ok: true, output: res.output });
   } else if (!res.ok) {

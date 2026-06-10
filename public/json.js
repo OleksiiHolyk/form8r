@@ -94,14 +94,27 @@ export function parseJson(text) {
   }
 }
 
-export function beautify(text, indent) {
-  const res = parseJson(text);
-  if (!res.ok) return res;
-  return { ok: true, value: res.value, output: JSON.stringify(res.value, null, indent) };
+/** Recursively sort object keys alphabetically (arrays keep their order). */
+export function sortKeysDeep(value) {
+  if (Array.isArray(value)) return value.map(sortKeysDeep);
+  if (value && typeof value === "object") {
+    const out = {};
+    for (const key of Object.keys(value).sort()) out[key] = sortKeysDeep(value[key]);
+    return out;
+  }
+  return value;
 }
 
-export function minify(text) {
+export function beautify(text, indent, sort = false) {
   const res = parseJson(text);
   if (!res.ok) return res;
-  return { ok: true, value: res.value, output: JSON.stringify(res.value) };
+  const value = sort ? sortKeysDeep(res.value) : res.value;
+  return { ok: true, value, output: JSON.stringify(value, null, indent) };
+}
+
+export function minify(text, sort = false) {
+  const res = parseJson(text);
+  if (!res.ok) return res;
+  const value = sort ? sortKeysDeep(res.value) : res.value;
+  return { ok: true, value, output: JSON.stringify(value) };
 }

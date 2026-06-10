@@ -2,7 +2,7 @@
 // Run with:  node --test   (or: npm test)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { beautify, minify, parseJson, indentToken } from "../public/json.js";
+import { beautify, minify, parseJson, indentToken, sortKeysDeep } from "../public/json.js";
 
 test("indentToken maps select values to JSON.stringify args", () => {
   assert.equal(indentToken("2"), 2);
@@ -78,4 +78,27 @@ test("error message is non-empty and humanized", () => {
   assert.equal(res.ok, false);
   assert.ok(res.error.message.length > 0);
   assert.ok(!/^JSON\.parse:/.test(res.error.message));
+});
+
+test("sortKeysDeep sorts object keys alphabetically at every level", () => {
+  const sorted = sortKeysDeep({ b: 1, a: { d: 4, c: 3 } });
+  assert.deepEqual(Object.keys(sorted), ["a", "b"]);
+  assert.deepEqual(Object.keys(sorted.a), ["c", "d"]);
+});
+
+test("sortKeysDeep preserves array order but sorts objects inside arrays", () => {
+  const sorted = sortKeysDeep([{ z: 1, a: 2 }, "x", 3]);
+  assert.deepEqual(sorted, [{ a: 2, z: 1 }, "x", 3]);
+  assert.deepEqual(Object.keys(sorted[0]), ["a", "z"]);
+});
+
+test("beautify with sort=true emits sorted keys", () => {
+  const res = beautify('{"b":1,"a":2}', 2, true);
+  assert.equal(res.ok, true);
+  assert.equal(res.output, '{\n  "a": 2,\n  "b": 1\n}');
+});
+
+test("minify with sort=true emits sorted keys", () => {
+  const res = minify('{"b":1,"a":{"d":1,"c":2}}', true);
+  assert.equal(res.output, '{"a":{"c":2,"d":1},"b":1}');
 });

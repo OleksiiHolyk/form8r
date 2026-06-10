@@ -43,6 +43,11 @@ const status = $("status");
 const indentSelect = $("indentSelect");
 const fileInput = $("fileInput");
 const gutter = $("gutter");
+const sortKeys = $("sortKeys");
+const searchInput = $("searchInput");
+const searchCount = $("searchCount");
+
+let lastOutput = ""; // current formatted output text, without any search markup
 
 const BIG = 500_000; // chars; above this we offload to a worker
 let worker = null;
@@ -79,7 +84,12 @@ input.addEventListener("scroll", () => {
 input.addEventListener("input", () => updateGutter());
 
 function showOutput(text) {
-  output.textContent = text;
+  lastOutput = text;
+  if (searchInput.value) {
+    applySearch();
+  } else {
+    output.textContent = text;
+  }
   if (!treeEl.classList.contains("hidden")) {
     const res = parseJson(text);
     if (res.ok) renderTree(treeEl, res.value);
@@ -110,6 +120,8 @@ function run(mode) {
   if (!text.trim()) {
     setStatus("Nothing to format.", "");
     output.textContent = "";
+    lastOutput = "";
+    searchCount.textContent = "";
     treeEl.replaceChildren();
     updateGutter();
     return;
@@ -131,11 +143,13 @@ function run(mode) {
       }
     };
     w.addEventListener("message", onMsg);
-    w.postMessage({ id, mode, text, indent: indentToken(indentSelect.value) });
+    w.postMessage({ id, mode, text, indent: indentToken(indentSelect.value), sort: sortKeys.checked });
     return;
   }
 
-  const res = mode === "beautify" ? beautify(text, indentToken(indentSelect.value)) : minify(text);
+  const sort = sortKeys.checked;
+  const res =
+    mode === "beautify" ? beautify(text, indentToken(indentSelect.value), sort) : minify(text, sort);
   if (res.ok && res.output !== undefined) {
     showOutput(res.output);
     setStatus(`✓ Valid JSON · ${res.output.length.toLocaleString()} chars`, "ok");
@@ -151,6 +165,8 @@ $("minifyBtn").addEventListener("click", () => run("minify"));
 $("clearBtn").addEventListener("click", () => {
   input.value = "";
   output.textContent = "";
+  lastOutput = "";
+  searchCount.textContent = "";
   treeEl.replaceChildren();
   setStatus("");
   updateGutter();
@@ -290,6 +306,95 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") toggleNetInfo(false);
 });
 
+// --- Sort keys --------------------------------------------------------------
+sortKeys.addEventListener("change", () => {
+  savePrefs();
+  if (input.value.trim()) run("beautify");
+});
+indentSelect.addEventListener("change", () => {
+  savePrefs();
+  if (input.value.trim()) run("beautify");
+});
+
+// --- Search in the formatted output -----------------------------------------
+let hits = [];
+let curHit = -1;
+
+function escapeHtml(s) {
+  return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+}
+
+function applySearch() {
+  const q = searchInput.value;
+  // Highlighting lives in the text output, so switch to it when searching.
+  if (q && !treeEl.classList.contains("hidden")) viewText.click();
+
+  if (!q) {
+    output.textContent = lastOutput;
+    searchCount.textContent = "";
+    hits = [];
+    curHit = -1;
+    return;
+  }
+
+  const haystack = lastOutput.toLowerCase();
+  const needle = q.toLowerCase();
+  let from = 0;
+  let idx;
+  let html = "";
+  let count = 0;
+  while ((idx = haystack.indexOf(needle, from)) !== -1) {
+    html += escapeHtml(lastOutput.slice(from, idx));
+    html += '<mark class="hit">' + escapeHtml(lastOutput.slice(idx, idx + needle.length)) + "</mark>";
+    from = idx + needle.length;
+    count++;
+  }
+  html += escapeHtml(lastOutput.slice(from));
+  output.innerHTML = html;
+
+  hits = [...output.querySelectorAll("mark.hit")];
+  searchCount.textContent = count ? `${count} match${count === 1 ? "" : "es"}` : "no matches";
+  curHit = hits.length ? 0 : -1;
+  markActiveHit();
+}
+
+function markActiveHit() {
+  hits.forEach((h, i) => h.classList.toggle("active", i === curHit));
+  if (hits[curHit]) hits[curHit].scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
+searchInput.addEventListener("input", applySearch);
+searchInput.addEventListener("keydown", (e) => {
+  // Enter jumps to the next match, Shift+Enter to the previous.
+  if (e.key === "Enter" && hits.length) {
+    e.preventDefault();
+    curHit = (curHit + (e.shiftKey ? -1 : 1) + hits.length) % hits.length;
+    markActiveHit();
+  }
+});
+
+// --- Persist UI preferences (settings only — never the input JSON) ----------
+const PREFS_KEY = "form8r:prefs";
+function savePrefs() {
+  try {
+    localStorage.setItem(
+      PREFS_KEY,
+      JSON.stringify({ indent: indentSelect.value, sort: sortKeys.checked })
+    );
+  } catch {
+    /* storage may be unavailable (e.g. private mode) — ignore */
+  }
+}
+function loadPrefs() {
+  try {
+    const p = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
+    if (p.indent) indentSelect.value = p.indent;
+    if (typeof p.sort === "boolean") sortKeys.checked = p.sort;
+  } catch {
+    /* ignore */
+  }
+}
+
 // Register the service worker for offline use. Same-origin only.
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -299,5 +404,6 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+loadPrefs();
 updateGutter();
 setStatus("Ready. Paste JSON and hit Beautify (or Ctrl/Cmd+Enter).");
