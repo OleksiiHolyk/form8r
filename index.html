@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f1115" />
+    <meta
+      name="description"
+      content="Fast, genuinely private JSON formatter. Runs entirely in your browser. Zero network. Open source."
+    />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="stylesheet" href="/style.css" />
+    <title>form8r — private JSON formatter</title>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">form8r</div>
+      <div class="tagline">
+        private JSON formatter · zero network ·
+        <a class="src-link" href="https://github.com/OleksiiHolyk/form8r" target="_blank" rel="noopener noreferrer">open source</a>
+      </div>
+      <div class="net-indicator" id="netIndicator" role="button" tabindex="0" title="Click to learn what this means">
+        <span class="dot"></span>
+        <span id="netLabel">0 network requests</span>
+        <span class="net-info-cue">ⓘ</span>
+        <div class="net-info hidden" id="netInfo">
+          <strong>Live privacy check</strong>
+          <p>
+            This page counts every network call it makes (<code>fetch</code>, <code>XHR</code>,
+            <code>sendBeacon</code>). It should always read <strong>0</strong> — meaning your JSON
+            never leaves your browser.
+          </p>
+          <p>
+            Don't take our word for it: open DevTools → Network and watch for yourself. The code is
+            <a href="https://github.com/OleksiiHolyk/form8r" target="_blank" rel="noopener noreferrer">open source</a>.
+          </p>
+          <p class="net-info-note">
+            Offline app caching runs separately and isn't counted — that's the browser storing the
+            app, not sending your data anywhere.
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="pane input-pane">
+        <div class="pane-head">
+          <span class="pane-title">Input</span>
+          <div class="actions">
+            <input
+              type="file"
+              id="fileInput"
+              accept=".json,application/json,text/plain"
+              hidden
+            />
+            <button id="pasteBtn" title="Paste JSON from clipboard">Paste</button>
+            <button id="openBtn" title="Open a .json file">Open file</button>
+            <label class="indent">
+              Indent
+              <select id="indentSelect">
+                <option value="2">2 spaces</option>
+                <option value="4">4 spaces</option>
+                <option value="tab">Tab</option>
+              </select>
+            </label>
+            <button id="beautifyBtn" class="primary">Beautify</button>
+            <button id="minifyBtn">Minify</button>
+            <button id="clearBtn">Clear</button>
+          </div>
+        </div>
+        <textarea
+          id="input"
+          class="editor"
+          spellcheck="false"
+          placeholder="Paste your JSON here — or drop a .json file straight into this box…"
+        ></textarea>
+        <div class="status" id="status"></div>
+      </section>
+
+      <section class="pane output-pane">
+        <div class="pane-head">
+          <span class="pane-title">Output</span>
+          <div class="actions">
+            <div class="view-toggle">
+              <button id="viewText" class="active">Text</button>
+              <button id="viewTree">Tree</button>
+            </div>
+            <button id="copyBtn">Copy</button>
+          </div>
+        </div>
+        <pre id="output" class="editor output"></pre>
+        <div id="tree" class="tree hidden"></div>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
