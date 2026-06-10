@@ -1,5 +1,5 @@
 import { beautify, minify, parseJson, indentToken } from "./json.js";
-import { renderTree } from "./tree.js";
+import { renderTree, setAllCollapsed } from "./tree.js";
 
 // --- Network watchdog -------------------------------------------------------
 // form8r makes zero network calls. We prove it by wrapping every browser API
@@ -218,6 +218,19 @@ viewTree.addEventListener("click", () => {
     treeEl.replaceChildren();
     setStatus("Format valid JSON first to see the tree.", "err");
   }
+});
+
+// Collapse / expand every node — switches to the tree view first.
+function ensureTreeView() {
+  if (treeEl.classList.contains("hidden")) viewTree.click();
+}
+$("collapseAllBtn").addEventListener("click", () => {
+  ensureTreeView();
+  setAllCollapsed(treeEl, true);
+});
+$("expandAllBtn").addEventListener("click", () => {
+  ensureTreeView();
+  setAllCollapsed(treeEl, false);
 });
 
 // Format on Ctrl/Cmd+Enter.
