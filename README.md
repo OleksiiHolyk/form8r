@@ -15,11 +15,15 @@ There is no build pipeline. The files in this repo *are* the files that run in y
 ## Features
 
 - **Beautify / Minify** with configurable indent (2, 4, or tab)
+- **Convert to YAML or CSV** — export your JSON in other formats, client-side
+- **Sort keys** alphabetically (recursively)
+- **Search** the output with match count and next / previous navigation
 - **Validation** with human-readable errors that jump to and highlight the exact spot
 - **Line numbers** with the error line marked
 - **Tree view** with collapsible nodes, collapsed previews, and collapse / expand all
 - **Paste from clipboard** or drop a `.json` file straight into the input box
 - **Large files** parsed in a Web Worker so the UI never freezes
+- **Remembers your settings** (indent, sort, format) locally — never your data
 - **Offline** — installable PWA; works with no network after first load
 - **`Ctrl`/`Cmd`+`Enter`** to format
 
