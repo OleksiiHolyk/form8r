@@ -67,9 +67,21 @@ function showOutput(text) {
   }
 }
 
-function reportError(line, column, message) {
+function reportError(error) {
+  const { line, column, message, position } = error;
   const loc = line ? ` (line ${line}${column ? `, column ${column}` : ""})` : "";
   setStatus(`✗ ${message ?? "Invalid JSON"}${loc}`, "err");
+  highlightError(position, line);
+}
+
+// Jump the input box to the offending spot, select it, and scroll it into view.
+function highlightError(position, line) {
+  if (typeof position !== "number") return;
+  const pos = Math.max(0, Math.min(position, input.value.length));
+  input.focus();
+  input.setSelectionRange(pos, Math.min(pos + 1, input.value.length));
+  const lh = parseFloat(getComputedStyle(input).lineHeight) || 18;
+  input.scrollTop = Math.max(0, ((line || 1) - 3) * lh);
 }
 
 function run(mode) {
@@ -92,7 +104,7 @@ function run(mode) {
         showOutput(e.data.output);
         setStatus(`✓ Valid JSON · ${e.data.output.length.toLocaleString()} chars`, "ok");
       } else {
-        reportError(e.data.error.line, e.data.error.column, e.data.error.message);
+        reportError(e.data.error);
       }
     };
     w.addEventListener("message", onMsg);
@@ -105,7 +117,7 @@ function run(mode) {
     showOutput(res.output);
     setStatus(`✓ Valid JSON · ${res.output.length.toLocaleString()} chars`, "ok");
   } else if (!res.ok) {
-    reportError(res.error.line, res.error.column, res.error.message);
+    reportError(res.error);
   }
 }
 

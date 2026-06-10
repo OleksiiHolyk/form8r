@@ -23,6 +23,17 @@ function lineColFromPosition(text, position) {
   return { line, column };
 }
 
+/** Compute a 0-based character offset from a 1-based line/column. */
+function positionFromLineCol(text, line, column) {
+  let offset = 0;
+  let curLine = 1;
+  while (curLine < line && offset < text.length) {
+    if (text[offset] === "\n") curLine++;
+    offset++;
+  }
+  return offset + Math.max(0, (column || 1) - 1);
+}
+
 /** Make engine error messages a bit friendlier. */
 function humanizeError(raw) {
   let m = raw.replace(/^JSON\.parse:\s*/, "").replace(/\s*in JSON.*$/i, "");
@@ -59,7 +70,19 @@ export function parseJson(text) {
         error.line = lc.line;
         error.column = lc.column;
       }
+    } else if (lineCol) {
+      // Only line/column reported (e.g. Firefox) — derive the offset.
+      error.position = positionFromLineCol(text, error.line, error.column);
     }
+
+    // "Unexpected end of input" (e.g. a missing closing bracket): point at the end.
+    if (error.position === undefined && /unexpected end of/i.test(raw)) {
+      error.position = text.length;
+      const lc = lineColFromPosition(text, error.position);
+      error.line = lc.line;
+      error.column = lc.column;
+    }
+
     error.message = humanizeError(raw);
     return { ok: false, error };
   }
