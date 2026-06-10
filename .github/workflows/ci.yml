@@ -1,0 +1,23 @@
+name: CI
+
+# Run the test suite on pushes to the main branches and on every pull request,
+# so nothing broken can be merged into main.
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # No dependencies to install — the tests use Node's built-in runner.
+      - name: Run tests
+        run: node --test

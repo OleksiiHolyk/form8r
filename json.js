@@ -78,6 +78,12 @@ export function parseJson(text) {
     // "Unexpected end of input" (e.g. a missing closing bracket): point at the end.
     if (error.position === undefined && /unexpected end of/i.test(raw)) {
       error.position = text.length;
+    }
+
+    // Always expose a numeric position so callers can safely highlight it,
+    // and derive line/column from it when the engine didn't report them.
+    if (typeof error.position !== "number") error.position = 0;
+    if (error.line === undefined) {
       const lc = lineColFromPosition(text, error.position);
       error.line = lc.line;
       error.column = lc.column;
