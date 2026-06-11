@@ -59,3 +59,14 @@ test("toCsv throws for unsupported shapes", () => {
   assert.throws(() => toCsv(42));
   assert.throws(() => toCsv("hello"));
 });
+
+test("toYaml preserves unicode and emoji", () => {
+  assert.equal(toYaml({ country: "Ukraine 🇺🇦" }), "country: Ukraine 🇺🇦\n");
+});
+
+test("toYaml handles deep nesting without overflowing the stack", () => {
+  let value = 1;
+  for (let i = 0; i < 500; i++) value = { a: value };
+  const yaml = toYaml(value);
+  assert.ok(yaml.startsWith("a:"));
+});

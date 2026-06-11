@@ -55,7 +55,7 @@ The JSON logic is covered by unit tests using Node's built-in test runner — st
 node --test     # or: npm test
 ```
 
-CI runs the suite on every push and pull request (`.github/workflows/ci.yml`).
+CI runs the suite on every push and pull request (`.github/workflows/ci.yml`). For the full procedure — including the manual browser checklist and how to verify the zero-network promise — see [TESTING.md](TESTING.md).
 
 ## Project layout
 

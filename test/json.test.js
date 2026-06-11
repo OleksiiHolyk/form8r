@@ -102,3 +102,27 @@ test("minify with sort=true emits sorted keys", () => {
   const res = minify('{"b":1,"a":{"d":1,"c":2}}', true);
   assert.equal(res.output, '{"a":{"c":2,"d":1},"b":1}');
 });
+
+test("preserves unicode and emoji", () => {
+  const src = '{"msg":"Привіт 🇺🇦","emoji":"😀"}';
+  const pretty = beautify(src, 2);
+  assert.equal(pretty.ok, true);
+  assert.equal(minify(pretty.output).output, src);
+});
+
+test("handles deeply nested input without overflowing the stack (incl. sort)", () => {
+  const depth = 1000;
+  const open = "{\"a\":".repeat(depth);
+  const close = "}".repeat(depth);
+  const src = open + "1" + close;
+  assert.equal(beautify(src, 0).ok, true);
+  assert.equal(beautify(src, 0, true).ok, true); // exercises sortKeysDeep recursion
+});
+
+test("documents that integers beyond 2^53 lose precision (JS number limitation)", () => {
+  const res = beautify('{"big":123456789012345678901234567890}', 0);
+  assert.equal(res.ok, true);
+  // Parsed as an IEEE-754 double — exact digits are NOT preserved. This is a
+  // JavaScript limitation, captured here so the behaviour is intentional.
+  assert.equal(typeof res.value.big, "number");
+});
