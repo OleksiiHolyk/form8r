@@ -61,7 +61,7 @@ test("toCsv throws for unsupported shapes", () => {
 });
 
 test("toYaml preserves unicode and emoji", () => {
-  assert.equal(toYaml({ country: "Ukraine 🇺🇦" }), "country: Ukraine 🇺🇦\n");
+  assert.equal(toYaml({ city: "São Paulo 🌆" }), "city: São Paulo 🌆\n");
 });
 
 test("toYaml handles deep nesting without overflowing the stack", () => {

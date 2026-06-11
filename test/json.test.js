@@ -104,7 +104,7 @@ test("minify with sort=true emits sorted keys", () => {
 });
 
 test("preserves unicode and emoji", () => {
-  const src = '{"msg":"Привіт 🇺🇦","emoji":"😀"}';
+  const src = '{"msg":"héllo wörld 🌍","emoji":"😀"}';
   const pretty = beautify(src, 2);
   assert.equal(pretty.ok, true);
   assert.equal(minify(pretty.output).output, src);
